@@ -372,48 +372,111 @@ function LangPicker({ currentLang, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Share Modal
+// Share Modal — encodes zones + pinned time in URL
 // ─────────────────────────────────────────────────────────────────────────────
-function ShareModal({ zoneIds, onClose, t }) {
+function ShareModal({ zoneIds, anchorDate, onClose, t }) {
+  const hasPinnedTime = !!anchorDate;
+
+  // Build URL: always include zones, include time (as UTC ms) if user pinned one
   const url = typeof window !== "undefined"
-    ? `${window.location.origin}/?zones=${zoneIds.join(",")}`
+    ? (() => {
+        const base = `${window.location.origin}/?zones=${zoneIds.join(",")}`;
+        return hasPinnedTime
+          ? `${base}&t=${anchorDate.getTime()}`
+          : base;
+      })()
     : "";
+
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(url).then(() => {
-      setCopied(true); setTimeout(() => setCopied(false), 2000);
+      setCopied(true); setTimeout(() => setCopied(false), 2500);
     });
   };
+
+  // Format pinned time nicely for display
+  const pinnedLabel = hasPinnedTime
+    ? anchorDate.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC"
+    : null;
+
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,.6)",
       backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
-      justifyContent: "center", zIndex: 200,
+      justifyContent: "center", zIndex: 200, padding: "0 16px",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
         background: "rgba(15,23,42,.97)", border: "1px solid rgba(255,255,255,.1)",
-        borderRadius: 18, padding: "28px 28px 24px", width: 380,
+        borderRadius: 18, padding: "24px 24px 20px", width: "100%", maxWidth: 400,
         boxShadow: "0 32px 80px rgba(0,0,0,.7)",
       }}>
-        <h3 style={{ color: "#f1f5f9", fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{t.shareTitle}</h3>
-        <p style={{ color: "rgba(148,163,184,.7)", fontSize: 12.5, marginBottom: 16, lineHeight: 1.6 }}>{t.shareDesc}</p>
+        <h3 style={{ color: "#f1f5f9", fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
+          {hasPinnedTime ? "📅 Share meeting time" : t.shareTitle}
+        </h3>
+
+        {/* Show what's being shared */}
         <div style={{
-          background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
-          borderRadius: 8, padding: "10px 12px", fontSize: 11,
-          color: "rgba(148,163,184,.8)", fontFamily: "monospace",
-          wordBreak: "break-all", marginBottom: 14,
+          background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)",
+          borderRadius: 10, padding: "12px 14px", marginBottom: 14,
+        }}>
+          <div style={{ fontSize: 12, color: "rgba(148,163,184,.5)", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".06em", fontWeight: 600 }}>
+            {hasPinnedTime ? "Meeting details" : "Included in link"}
+          </div>
+          {/* Zones */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: hasPinnedTime ? 10 : 0 }}>
+            {zoneIds.map(id => {
+              const z = TIMEZONE_DB.find(z => z.id === id);
+              return z ? (
+                <span key={id} style={{
+                  fontSize: 12, background: "rgba(255,255,255,.07)",
+                  border: "1px solid rgba(255,255,255,.1)", borderRadius: 20,
+                  padding: "3px 10px", color: "#e2e8f0",
+                }}>{z.flag} {z.city}</span>
+              ) : null;
+            })}
+          </div>
+          {/* Pinned time */}
+          {hasPinnedTime && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: "rgba(110,231,183,.08)", border: "1px solid rgba(110,231,183,.2)",
+              borderRadius: 8, padding: "8px 12px",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span style={{ fontSize: 12, color: "#6ee7b7", fontWeight: 500 }}>
+                Pinned time: {pinnedLabel}
+              </span>
+            </div>
+          )}
+          {!hasPinnedTime && (
+            <p style={{ fontSize: 12, color: "rgba(148,163,184,.45)", marginTop: 8, lineHeight: 1.5 }}>
+              💡 Tip: click a time to set a meeting time before sharing — recipients will see your exact proposed time in their timezone.
+            </p>
+          )}
+        </div>
+
+        {/* URL display */}
+        <div style={{
+          background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)",
+          borderRadius: 8, padding: "9px 12px", fontSize: 11,
+          color: "rgba(148,163,184,.6)", fontFamily: "monospace",
+          wordBreak: "break-all", marginBottom: 14, lineHeight: 1.6,
         }}>{url}</div>
+
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={copy} style={{
-            flex: 1, padding: 10, borderRadius: 10, cursor: "pointer",
+            flex: 1, padding: "11px 10px", borderRadius: 10, cursor: "pointer",
             background: copied ? "rgba(99,179,137,.2)" : "rgba(99,179,137,.15)",
-            color: copied ? "#6ee7b7" : "#86efac", fontSize: 13, fontWeight: 600,
+            color: copied ? "#6ee7b7" : "#86efac", fontSize: 14, fontWeight: 600,
             border: `1px solid ${copied ? "rgba(110,231,183,.4)" : "rgba(134,239,172,.2)"}`,
-          }}>{copied ? `✓ ${t.copied}` : t.copyLink}</button>
+            transition: "all .15s",
+          }}>{copied ? "✓ Copied!" : t.copyLink}</button>
           <button onClick={onClose} style={{
-            padding: "10px 16px", borderRadius: 10, cursor: "pointer",
+            padding: "11px 16px", borderRadius: 10, cursor: "pointer",
             background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.08)",
-            color: "rgba(148,163,184,.7)", fontSize: 13,
+            color: "rgba(148,163,184,.7)", fontSize: 14,
           }}>{t.close}</button>
         </div>
       </div>
@@ -427,11 +490,11 @@ function ShareModal({ zoneIds, onClose, t }) {
 function ZoneRow({ zone, timeStr, dateStr, utcOff, abbr, dst, isDay, onDelete, onTimeChange, t }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 0,
       background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)",
-      borderRadius: 14, padding: "14px 18px", marginBottom: 8,
+      borderRadius: 14, padding: "12px 14px", marginBottom: 8,
       position: "relative", overflow: "hidden",
     }}>
+      {/* left accent bar */}
       <div style={{
         position: "absolute", left: 0, top: "20%", bottom: "20%", width: 3,
         borderRadius: "0 3px 3px 0",
@@ -439,52 +502,47 @@ function ZoneRow({ zone, timeStr, dateStr, utcOff, abbr, dst, isDay, onDelete, o
         opacity: .7,
       }} />
 
-      {/* Drag handle */}
-      <div draggable={false} style={{
-        display: "flex", flexDirection: "column", gap: 3,
-        padding: "4px 10px 4px 12px", cursor: "grab", opacity: .3, flexShrink: 0,
-      }}>
-        {[0, 1, 2].map(i => <div key={i} style={{ width: 16, height: 1.5, background: "#94a3b8", borderRadius: 1 }} />)}
-      </div>
-
-      {/* Flag + city */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 150, flexShrink: 0 }}>
-        <span style={{ fontSize: 26, lineHeight: 1 }}>{zone.flag}</span>
-        <div>
+      {/* Top row: flag + city + DELETE BUTTON */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, paddingLeft: 10 }}>
+        <span style={{ fontSize: 24, lineHeight: 1, flexShrink: 0 }}>{zone.flag}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: "#f1f5f9", letterSpacing: "-.2px" }}>{zone.city}</span>
             <SunMoonIcon day={isDay} />
           </div>
-          <div style={{ fontSize: 11, color: "rgba(148,163,184,.6)", marginTop: 1 }}>{zone.country}</div>
+          <div style={{ fontSize: 11, color: "rgba(148,163,184,.5)", marginTop: 1 }}>{zone.country}</div>
         </div>
-      </div>
-
-      {/* Date + offset */}
-      <div style={{ marginLeft: 16, minWidth: 140, flexShrink: 0 }}>
-        <div style={{ fontSize: 12, color: "rgba(148,163,184,.7)" }}>{dateStr}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 600, color: "rgba(148,163,184,.5)" }}>{utcOff}</span>
-          <span style={{ fontSize: 10, color: "rgba(148,163,184,.4)", background: "rgba(255,255,255,.06)", borderRadius: 4, padding: "1px 5px" }}>{abbr}</span>
-          {dst && <DSTBadge info={dst} t={t} />}
-        </div>
-      </div>
-
-      {/* Time + delete */}
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-        <TimeInput value={timeStr} onChange={onTimeChange} t={t} />
-        <button onClick={onDelete}
+        {/* Big mobile-friendly delete button */}
+        <button
+          onClick={onDelete}
+          aria-label={`${t.remove} ${zone.city}`}
           style={{
-            background: "none", border: "none", cursor: "pointer",
-            color: "rgba(148,163,184,.3)", padding: 6, borderRadius: 6, transition: "color .12s, background .12s",
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: "rgba(248,113,113,.12)", border: "1px solid rgba(248,113,113,.25)",
+            color: "#f87171", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background .15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(248,113,113,.1)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(148,163,184,.3)"; e.currentTarget.style.background = "none"; }}
-          aria-label={t.remove}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,.22)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(248,113,113,.12)"}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
+      </div>
+
+      {/* Bottom row: date/offset on left, time on right */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: 10 }}>
+        <div>
+          <div style={{ fontSize: 12, color: "rgba(148,163,184,.7)", marginBottom: 3 }}>{dateStr}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 600, color: "rgba(148,163,184,.5)" }}>{utcOff}</span>
+            <span style={{ fontSize: 10, color: "rgba(148,163,184,.4)", background: "rgba(255,255,255,.06)", borderRadius: 4, padding: "1px 5px" }}>{abbr}</span>
+            {dst && <DSTBadge info={dst} t={t} />}
+          </div>
+        </div>
+        <TimeInput value={timeStr} onChange={onTimeChange} t={t} />
       </div>
     </div>
   );
@@ -507,8 +565,29 @@ export default function WorldTimeApp() {
 
   const t = T[lang] || T.en;
 
-  // Hydrate from localStorage on mount
+  // Hydrate: URL params take priority, then localStorage
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlZones = params.get("zones");
+    const urlTime = params.get("t");
+
+    if (urlZones) {
+      const ids = urlZones.split(",").map(s => s.trim().toLowerCase())
+        .filter(id => TIMEZONE_DB.find(z => z.id === id));
+      if (ids.length > 0) {
+        setZoneIds(ids);
+        // Restore pinned meeting time if present
+        if (urlTime) {
+          const ms = parseInt(urlTime, 10);
+          if (!isNaN(ms)) setAnchorDate(new Date(ms));
+        }
+        const savedLang = loadSavedLang();
+        if (savedLang) setLang(savedLang);
+        else setLang(detectLanguage());
+        setHydrated(true);
+        return;
+      }
+    }
     const savedZones = loadSavedZones();
     const savedLang = loadSavedLang();
     if (savedZones) setZoneIds(savedZones);
@@ -735,7 +814,7 @@ export default function WorldTimeApp() {
         </p>
       </main>
 
-      {showShare && <ShareModal zoneIds={zoneIds} onClose={() => setShowShare(false)} t={t} />}
+      {showShare && <ShareModal zoneIds={zoneIds} anchorDate={anchorDate} onClose={() => setShowShare(false)} t={t} />}
     </div>
   );
 }

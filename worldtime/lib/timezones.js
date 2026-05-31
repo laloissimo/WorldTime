@@ -31,7 +31,7 @@ export const TIMEZONE_DB = [
   { id: "bogota",      city: "Bogotá",       country: "Colombia",      flag: "🇨🇴", tz: "America/Bogota"       },
 ];
 
-export const DEFAULT_ZONES = ["berlin", "newyork", "tokyo", "sydney"];
+export const DEFAULT_ZONES = ["berlin", "brasilia", "melbourne", "vancouver", "toronto"];
 
 export function getTimeInZone(tz, date = new Date()) {
   return new Intl.DateTimeFormat("en-GB", {

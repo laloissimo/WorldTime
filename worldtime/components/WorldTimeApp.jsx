@@ -411,7 +411,7 @@ function ShareModal({ zoneIds, anchorDate, onClose, t }) {
         boxShadow: "0 32px 80px rgba(0,0,0,.7)",
       }}>
         <h3 style={{ color: "#f1f5f9", fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-          {hasPinnedTime ? "📅 Share meeting time" : t.shareTitle}
+          {hasPinnedTime ? "📅 Share meeting time" : "🌍 Share Kairos"}
         </h3>
 
         {/* Show what's being shared */}
@@ -446,13 +446,13 @@ function ShareModal({ zoneIds, anchorDate, onClose, t }) {
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
               <span style={{ fontSize: 12, color: "#6ee7b7", fontWeight: 500 }}>
-                Pinned time: {pinnedLabel}
+                Pinned: {pinnedLabel}
               </span>
             </div>
           )}
           {!hasPinnedTime && (
-            <p style={{ fontSize: 12, color: "rgba(148,163,184,.45)", marginTop: 8, lineHeight: 1.5 }}>
-              💡 Tip: click a time to set a meeting time before sharing — recipients will see your exact proposed time in their timezone.
+            <p style={{ fontSize: 12, color: "rgba(148,163,184,.45)", marginTop: 8, lineHeight: 1.5, fontStyle: "italic" }}>
+              💡 Tip: click any time first to pin a meeting time — recipients will see your exact proposed time in their timezone.
             </p>
           )}
         </div>
@@ -657,28 +657,37 @@ export default function WorldTimeApp() {
       {/* Header */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "24px 32px 20px",
+        padding: "20px 24px 18px",
         borderBottom: "1px solid rgba(255,255,255,.05)",
+        flexWrap: "wrap", gap: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 9,
-            background: "linear-gradient(135deg, rgba(99,179,137,.3), rgba(56,189,248,.2))",
-            border: "1px solid rgba(99,179,137,.3)",
+            width: 34, height: 34, borderRadius: 10,
+            background: "linear-gradient(135deg, rgba(99,179,137,.35), rgba(56,189,248,.2))",
+            border: "1px solid rgba(99,179,137,.35)",
             display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", letterSpacing: "-.3px" }}>{t.appName}</span>
-          <span style={{
-            fontSize: 9, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase",
-            color: "#6ee7b7", background: "rgba(110,231,183,.1)", border: "1px solid rgba(110,231,183,.2)",
-            borderRadius: 4, padding: "2px 6px", marginLeft: 2,
-          }}>{t.free}</span>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#f1f5f9", letterSpacing: "-.4px" }}>{t.appName}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase",
+                color: "#6ee7b7", background: "rgba(110,231,183,.1)", border: "1px solid rgba(110,231,183,.2)",
+                borderRadius: 4, padding: "2px 6px",
+              }}>{t.free}</span>
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(148,163,184,.4)", marginTop: 1, letterSpacing: ".02em" }}>
+              {t.tagline}
+            </div>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <LangPicker currentLang={lang} onChange={setLang} />
           {anchorDate && (
             <button onClick={() => setAnchorDate(null)} style={{
@@ -708,19 +717,57 @@ export default function WorldTimeApp() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 680, margin: "0 auto", padding: "32px 20px 0" }}>
-        {/* Live status */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+      <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 0" }}>
+
+        {/* Live status + date toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           <div style={{
-            width: 7, height: 7, borderRadius: "50%",
+            width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
             background: anchorDate ? "#fbbf24" : "#4ade80",
             boxShadow: anchorDate ? "0 0 0 3px rgba(251,191,36,.2)" : "0 0 0 3px rgba(74,222,128,.2)",
           }} />
-          <span style={{ fontSize: 12, color: "rgba(148,163,184,.6)" }}>
+          <span style={{ fontSize: 12, color: "rgba(148,163,184,.6)", flex: 1 }}>
             {anchorDate
               ? `${t.previewing} — ${displayDate.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} UTC`
               : t.live}
           </span>
+          {/* Date toggle — only shown when a time is pinned */}
+          {anchorDate && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 11, color: "rgba(148,163,184,.4)" }}>day:</span>
+              <button
+                onClick={() => setAnchorDate(new Date(anchorDate.getTime() - 86400000))}
+                style={{
+                  background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
+                  borderRadius: 6, padding: "4px 10px", cursor: "pointer",
+                  color: "rgba(226,232,240,.7)", fontSize: 12, fontWeight: 600,
+                  transition: "background .12s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.12)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.06)"}
+                title="Previous day"
+              >{t.prevDay}</button>
+              <span style={{
+                fontSize: 12, fontWeight: 600, color: "#f1f5f9",
+                background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
+                borderRadius: 6, padding: "4px 10px", minWidth: 90, textAlign: "center",
+              }}>
+                {displayDate.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+              </span>
+              <button
+                onClick={() => setAnchorDate(new Date(anchorDate.getTime() + 86400000))}
+                style={{
+                  background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
+                  borderRadius: 6, padding: "4px 10px", cursor: "pointer",
+                  color: "rgba(226,232,240,.7)", fontSize: 12, fontWeight: 600,
+                  transition: "background .12s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.12)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.06)"}
+                title="Next day"
+              >{t.nextDay}</button>
+            </div>
+          )}
         </div>
 
         {/* Zone rows */}
@@ -810,7 +857,7 @@ export default function WorldTimeApp() {
         )}
 
         <p style={{ textAlign: "center", fontSize: 11, color: "rgba(148,163,184,.25)", marginTop: 32, lineHeight: 1.7 }}>
-          {t.hint}
+          {t.hint} · Use − day / + day to shift the date
         </p>
       </main>
 

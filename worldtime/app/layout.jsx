@@ -1,8 +1,13 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "WorldTime — Global Time Zone Planner",
-  description: "Compare, convert and coordinate time zones instantly. Free, beautiful, mobile-first.",
+  title: "Kairos — Time without borders",
+  description: "Find the perfect moment, everywhere. Compare and coordinate time zones instantly. Free, beautiful, mobile-first.",
+  openGraph: {
+    title: "Kairos — Time without borders",
+    description: "Find the perfect moment, everywhere.",
+    siteName: "Kairos",
+  },
 };
 
 export default function RootLayout({ children }) {

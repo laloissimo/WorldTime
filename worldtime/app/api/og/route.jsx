@@ -60,7 +60,7 @@ function isNextDay(baseTz, targetTz, date) {
   return targetDate > baseDate ? "+1" : targetDate < baseDate ? "-1" : null;
 }
 
-export default async function GET(request) {
+export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const zonesParam = searchParams.get("zones") || "berlin,brasilia,melbourne,vancouver";
   const timeParam = searchParams.get("t");

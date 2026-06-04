@@ -4,6 +4,7 @@ export const metadata = {
   title: "Kairos — Time without borders",
   description: "Find the perfect moment, everywhere. Compare and coordinate time zones instantly.",
   metadataBase: new URL("https://kairos-laloicworld.vercel.app"),
+
   openGraph: {
     title: "Kairos — Time without borders",
     description: "Find the perfect moment, everywhere.",

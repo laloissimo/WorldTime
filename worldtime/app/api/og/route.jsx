@@ -239,7 +239,7 @@ export default async function GET(request) {
             borderTop: "1px solid rgba(255,255,255,0.06)",
           }}>
             <span style={{ fontSize: 13, color: "rgba(148,163,184,0.3)", letterSpacing: "0.05em" }}>
-              kairos.vercel.app
+              kairos-laloicworld.vercel.app
             </span>
             <span style={{ fontSize: 13, color: "rgba(148,163,184,0.3)" }}>
               {hasPinnedTime ? "Tap to open in your timezone" : "Tap to compare live times"}

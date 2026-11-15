@@ -30,7 +30,8 @@ const C = {
   accent: "#6ee7b7",
   day: "#fbbf24",
   night: "#6366f1",
-  warn: "#fbbf24",
+  chipText: "#080f1a",
+  chip: "#fbbf24",
 };
 
 // Fonts ship inside the project, so rendering needs no network at all.
@@ -65,25 +66,21 @@ function ClockMark() {
   );
 }
 
-// Type sizes step down as rows are added so five zones still read clearly
-// at the size a chat app shows the picture.
-const SCALE = {
-  1: { row: 150, gap: 0, city: 60, time: 104, date: 30, flagW: 96 },
-  2: { row: 150, gap: 22, city: 56, time: 100, date: 28, flagW: 90 },
-  3: { row: 132, gap: 18, city: 52, time: 92, date: 26, flagW: 84 },
-  4: { row: 104, gap: 14, city: 46, time: 78, date: 24, flagW: 72 },
-  5: { row: 84, gap: 11, city: 40, time: 66, date: 22, flagW: 60 },
-};
+// Pinned cards: one date line on top, then one row per zone. Sizes are fixed
+// so the picture reads the same whether it has two zones or five.
+const PINNED = { row: 66, gap: 6, city: 46, time: 66, flagW: 72 };
 
-function Row({ r, s, pinned }) {
+// Live cards (no pinned time): cities and their UTC offsets, no date line.
+const LIVE = { row: 150, gap: 22, city: 56, time: 60, flagW: 90 };
+
+function Row({ r, s, pinned, showChip }) {
   const src = flagSrc(r.cc);
   const flagH = Math.round((s.flagW * 2) / 3);
-  const shifted = r.dayShift !== 0;
   return (
     <div style={{
       display: "flex", alignItems: "center", height: s.row,
-      background: C.row, border: `2px solid ${C.rowBorder}`, borderRadius: 20,
-      paddingLeft: 30, paddingRight: 34, position: "relative",
+      background: C.row, border: `2px solid ${C.rowBorder}`, borderRadius: 18,
+      paddingLeft: 28, paddingRight: 30, position: "relative",
     }}>
       <div style={{
         display: "flex", position: "absolute", left: 0,
@@ -91,23 +88,24 @@ function Row({ r, s, pinned }) {
         borderRadius: 4, background: pinned ? (r.isDay ? C.day : C.night) : C.accent,
       }} />
       {src ? (
-        <img src={src} width={s.flagW} height={flagH} style={{ borderRadius: 7, marginRight: 26 }} />
+        <img src={src} width={s.flagW} height={flagH} style={{ borderRadius: 7, marginRight: 24 }} />
       ) : null}
       <div style={{
         display: "flex", flex: 1, fontFamily: "DM Sans", fontWeight: 700,
         fontSize: s.city, color: C.text, letterSpacing: -1,
       }}>{r.city}</div>
+      {showChip ? (
+        <div style={{
+          display: "flex", fontFamily: "DM Sans", fontWeight: 700, fontSize: 24,
+          color: C.chipText, background: C.chip, borderRadius: 10,
+          padding: "6px 14px", marginRight: 22,
+        }}>{r.dateLabel}</div>
+      ) : null}
       {pinned ? (
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{
-            display: "flex", fontFamily: "DM Sans", fontWeight: shifted ? 700 : 500,
-            fontSize: s.date, color: shifted ? C.warn : C.muted, marginRight: 30,
-          }}>{r.dateLabel}</div>
-          <div style={{
-            display: "flex", fontFamily: "DM Mono", fontWeight: 400,
-            fontSize: s.time, color: C.time, letterSpacing: -2,
-          }}>{r.time}</div>
-        </div>
+        <div style={{
+          display: "flex", fontFamily: "DM Mono", fontWeight: 400,
+          fontSize: s.time, color: C.time, letterSpacing: -2,
+        }}>{r.time}</div>
       ) : (
         <div style={{
           display: "flex", fontFamily: "DM Mono", fontWeight: 400,
@@ -123,7 +121,7 @@ export async function GET(request) {
   const share = parseShare(searchParams.get("zones"), searchParams.get("t"));
   const rows = share.rows.slice(0, MAX_SHARE_ZONES);
   const extra = share.rows.length - rows.length;
-  const s = SCALE[rows.length];
+  const s = share.pinned ? PINNED : LIVE;
   const fonts = await loadFonts();
 
   const image = new ImageResponse(
@@ -154,13 +152,26 @@ export async function GET(request) {
           </div>
         </div>
 
+        {share.pinned ? (
+          <div style={{
+            display: "flex", fontSize: 76, fontWeight: 700, color: C.text,
+            letterSpacing: -2, marginTop: 14, marginBottom: 14,
+          }}>
+            {rows[0].dateLabel}
+          </div>
+        ) : null}
+
         <div style={{
-          display: "flex", flexDirection: "column", justifyContent: "center",
+          display: "flex", flexDirection: "column",
+          justifyContent: share.pinned ? "flex-start" : "center",
           flex: 1, paddingBottom: 30,
         }}>
           {rows.map((r, i) => (
-            <div key={r.id} style={{ display: "flex", flexDirection: "column", marginTop: i === 0 ? 0 : s.gap }}>
-              <Row r={r} s={s} pinned={share.pinned} />
+            <div key={r.id} style={{
+              display: "flex", flexDirection: "column",
+              marginTop: i === 0 ? 0 : s.gap,
+            }}>
+              <Row r={r} s={s} pinned={share.pinned} showChip={share.pinned && r.dayShift !== 0} />
             </div>
           ))}
         </div>

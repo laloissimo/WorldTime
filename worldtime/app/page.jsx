@@ -6,7 +6,10 @@ import { parseShare, shareText, SITE_URL } from "../lib/share";
 export async function generateMetadata({ searchParams }) {
   const params = await searchParams;
   const share = parseShare(params?.zones, params?.t);
-  const { title, description } = shareText(share);
+  // The picture carries the times, so the link shows just the brand under the image.
+  const title = "Kairos";
+  const description = "";
+  const alt = shareText(share).title;
   const hasQuery = Boolean(params?.zones || params?.t);
   const pageUrl = hasQuery ? `${SITE_URL}/?${share.query}` : `${SITE_URL}/`;
   const image = {
@@ -14,7 +17,7 @@ export async function generateMetadata({ searchParams }) {
     width: 1200,
     height: 630,
     type: "image/png",
-    alt: title,
+    alt: alt,
   };
 
   return {
